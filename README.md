@@ -1,119 +1,231 @@
-# 🎯 AI Interview Assistant — Ollama Edition
+# 🎯 AI Interview Assistant
 
-A fully **local**, **private** AI-powered interview preparation platform built with
-**Streamlit** + **Ollama** (`llama3.1:70b` + `nomic-embed-text`).
+AI Interview Assistant is a locally hosted interview preparation application built using **Python**, **Streamlit**, and **Ollama**. It helps users prepare for technical interviews by analyzing resumes, conducting mock interviews, evaluating coding solutions, and providing detailed feedback—all while keeping data on the local machine.
 
-> 🔒 **No API keys. No cloud. No data leaves your machine.**
+The application uses **Llama 3.1** for language understanding and **nomic-embed-text** for embeddings, making it possible to run the complete interview workflow without relying on external AI services.
+
+---
 
 ## Features
 
-| Page | Feature |
-|---|---|
-| 📄 Resume Analysis | Upload PDF/DOCX → extract skills, experience, education; job-match scoring |
-| 🗣️ Mock Interview | AI-generated technical & behavioural questions with timer and follow-ups |
-| 💻 Coding Interview | Problems with progressive hints, simulated test runs, and code review |
-| 📊 Feedback Report | Scored report with per-question breakdown, strengths, gaps, and study plan |
-| 📜 Interview History | Browse past sessions and revisit feedback |
+| Module               | Description                                                                                               |
+| -------------------- | --------------------------------------------------------------------------------------------------------- |
+| 📄 Resume Analysis   | Upload PDF or DOCX resumes to extract skills, education, projects, and experience with job-match scoring. |
+| 🗣️ Mock Interview   | Practice technical and behavioral interviews with AI-generated questions and follow-up prompts.           |
+| 💻 Coding Interview  | Solve coding problems with hints, code evaluation, and feedback.                                          |
+| 📊 Feedback Report   | Receive an overall score along with strengths, improvement areas, and personalized recommendations.       |
+| 📜 Interview History | Review previous interview sessions and feedback reports.                                                  |
+
+---
 
 ## Prerequisites
 
-### 1. Install Ollama
-```bash
-# macOS / Linux
-curl -fsSL https://ollama.com/install.sh | sh
+Before running the application, make sure the following software is installed.
 
-# Windows: download from https://ollama.com/download
+### Install Ollama
+
+**Windows**
+
+Download and install Ollama from:
+
+https://ollama.com/download
+
+**macOS / Linux**
+
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
 ```
 
-### 2. Pull required models
-```bash
-# LLM (large — ~40GB, use llama3.1:8b to start if disk is limited)
-ollama pull llama3.1:70b
+---
 
-# Embedding model (~270MB)
+## Download Required Models
+
+```bash
+ollama pull llama3.1:70b
 ollama pull nomic-embed-text
 ```
 
-### 3. Start Ollama server
+If your system has limited memory, you can use the smaller model instead:
+
+```bash
+ollama pull llama3.1:8b
+```
+
+---
+
+## Start the Ollama Server
+
 ```bash
 ollama serve
-# Runs at http://localhost:11434 by default
 ```
 
-## Quick Start
+The default server runs on:
+
+```text
+http://localhost:11434
+```
+
+---
+
+## Installation
+
+Clone the repository.
 
 ```bash
-# 1. Clone and enter
-git clone <repo>
-cd ai-interview-assistant-ollama
+git clone https://github.com/monika-dev-sys/AI-Interview-Assistant.git
 
-# 2. Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# 3. Install dependencies
-pip install -r requirements.txt
-
-# 4. Configure
-cp config/.env.example config/.env
-# Edit config/.env if needed (defaults work for standard Ollama setup)
-
-# 5. Run
-streamlit run app.py
+cd AI-Interview-Assistant
 ```
+
+Create and activate a virtual environment.
+
+### Windows
+
+```bash
+python -m venv venv
+
+venv\Scripts\activate
+```
+
+### Linux / macOS
+
+```bash
+python3 -m venv venv
+
+source venv/bin/activate
+```
+
+Install the required dependencies.
+
+```bash
+pip install -r requirements.txt
+```
+
+---
 
 ## Configuration
 
-| Variable | Default | Description |
-|---|---|---|
-| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server URL |
-| `OLLAMA_MODEL` | `llama3.1:70b` | LLM model for all completions |
-| `OLLAMA_EMBED_MODEL` | `nomic-embed-text` | Embedding model for vector search |
-| `OLLAMA_TIMEOUT` | `300` | Request timeout in seconds |
-| `OLLAMA_NUM_CTX` | `8192` | Context window size |
+Create a configuration file inside the `config` folder.
 
-### Using a smaller model (faster, less RAM)
-```bash
-# In config/.env
+```text
+config/.env
+```
+
+Example configuration:
+
+```env
+OLLAMA_BASE_URL=http://localhost:11434
+
+OLLAMA_MODEL=llama3.1:70b
+
+OLLAMA_EMBED_MODEL=nomic-embed-text
+
+OLLAMA_TIMEOUT=300
+
+OLLAMA_NUM_CTX=8192
+```
+
+To use a smaller model:
+
+```env
 OLLAMA_MODEL=llama3.1:8b
 ```
 
-### Remote Ollama server
+---
+
+## Run the Application
+
 ```bash
-OLLAMA_BASE_URL=http://192.168.1.100:11434
+streamlit run app.py
 ```
+
+After the application starts, open the local URL displayed in the terminal.
+
+---
+
+## Project Structure
+
+```text
+AI-Interview-Assistant
+│
+├── agents/
+├── config/
+├── data/
+├── database/
+├── logs/
+├── models/
+├── pages/
+├── prompts/
+├── services/
+├── tests/
+├── utils/
+│
+├── app.py
+├── requirements.txt
+└── README.md
+```
+
+---
 
 ## System Requirements
 
-| Model | RAM | VRAM (GPU) |
-|---|---|---|
-| llama3.1:8b | 8 GB | 6 GB |
-| llama3.1:70b | 64 GB | 48 GB |
-| nomic-embed-text | 1 GB | — |
+| Component        | Recommended                                 |
+| ---------------- | ------------------------------------------- |
+| Python           | 3.11 or later                               |
+| RAM              | 16 GB (32 GB recommended for larger models) |
+| Storage          | At least 20 GB                              |
+| Operating System | Windows, Linux, or macOS                    |
 
-> llama3.1:70b can run on CPU with 64 GB RAM (slower inference ~1–3 tok/s).
-> For faster results, use a GPU or switch to llama3.1:8b.
+For better performance, use a GPU if available. Otherwise, the application can also run entirely on the CPU, although larger language models will respond more slowly.
+
+---
 
 ## Architecture
 
+```text
+                Streamlit Application
+                        │
+                        ▼
+              Interview Orchestrator
+                        │
+        ┌───────────────┼────────────────┐
+        ▼               ▼                ▼
+ Resume Agent    Interview Agent   Coding Agent
+        │               │                │
+        └───────────────┼────────────────┘
+                        ▼
+                 Feedback Generator
+                        │
+        ┌───────────────┴────────────────┐
+        ▼                                ▼
+     SQLite Database              ChromaDB
+                        │
+                        ▼
+                 Ollama Server
+         (Llama 3.1 + nomic-embed-text)
 ```
-Streamlit pages  →  Orchestrator Agent  →  Specialist Agents
-                                         ├─ ResumeAgent
-                                         ├─ QuestionAgent
-                                         ├─ BehavioralAgent
-                                         ├─ CodingAgent
-                                         ├─ EvaluationAgent
-                                         └─ FeedbackAgent
-                        ↓                       ↓
-                   SQLite DB          ChromaDB + nomic-embed-text
-                                       (via Ollama, fully local)
-                        ↑
-                   Ollama Server
-                   llama3.1:70b
-```
+
+---
 
 ## Running Tests
 
 ```bash
-pytest tests/ -v
+pytest tests -v
 ```
+
+---
+
+## Future Improvements
+
+* Voice-based mock interviews
+* Company-specific interview preparation
+* Resume ATS compatibility analysis
+* Multi-language interview support
+* Dashboard for tracking interview performance
+* Exportable interview reports
+
+---
+
+
+
+Jawaharlal Nehru National College of Engineering, Shivamogga
