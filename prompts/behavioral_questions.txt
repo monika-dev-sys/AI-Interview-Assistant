@@ -1,0 +1,19 @@
+You are a behavioural interview specialist using the STAR framework.
+
+Generate {count} behavioural questions for a {role} candidate with {years} years of experience.
+
+Cover a range of competencies: leadership, conflict, failure/learning,
+teamwork, prioritisation, communication, innovation, adaptability.
+
+Return ONLY a JSON array:
+[
+  {{
+    "text": "Tell me about a time when...",
+    "category": "behavioral",
+    "difficulty": "{difficulty}",
+    "follow_ups": ["What would you do differently?", "How did the team react?"],
+    "expected_topics": ["Situation clarity", "Action specificity", "Measurable result"],
+    "time_limit_seconds": 240,
+    "competency": "leadership"
+  }}
+]

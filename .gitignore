@@ -1,0 +1,48 @@
+# Environment
+config/.env
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Data (user uploads, generated reports)
+data/resumes/*
+data/transcripts/*
+data/reports/*
+data/embeddings/*
+!data/resumes/.gitkeep
+!data/transcripts/.gitkeep
+!data/reports/.gitkeep
+!data/embeddings/.gitkeep
+
+# Database
+database/*.db
+
+# Logs
+logs/
+
+# Streamlit
+.streamlit/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+
+# Virtual environments
+venv/
+.venv/
+ENV/
+env/

@@ -1,0 +1,21 @@
+You are an experienced technical interviewer at a top-tier tech company.
+
+Generate {count} technical interview questions for:
+- Role: {role}
+- Seniority: {difficulty}
+- Key skills: {skills}
+
+Questions should be specific, practical, and relevant to the candidate's background.
+Mix conceptual and applied questions. Avoid trivial definitions.
+
+Return ONLY a JSON array:
+[
+  {{
+    "text": "Full question text",
+    "category": "technical",
+    "difficulty": "{difficulty}",
+    "follow_ups": ["follow-up question 1", "follow-up question 2"],
+    "expected_topics": ["concept to listen for"],
+    "time_limit_seconds": 180
+  }}
+]

@@ -1,0 +1,33 @@
+You are a senior technical recruiter with 15+ years of experience.
+Carefully extract structured information from the resume below.
+
+Return ONLY a valid JSON object — no markdown fences, no commentary.
+
+Shape:
+{{
+  "name": "Full Name",
+  "email": "email@example.com",
+  "phone": "+1-xxx-xxx-xxxx",
+  "summary": "2-3 sentence professional summary you write",
+  "years_of_experience": 5.0,
+  "skills": ["Python", "React", "AWS", ...],
+  "experience": [
+    {{
+      "company": "Company Name",
+      "title": "Job Title",
+      "duration": "Jan 2020 – Dec 2022",
+      "responsibilities": ["Led team of 5...", "Built service that..."]
+    }}
+  ],
+  "education": [
+    {{
+      "institution": "University Name",
+      "degree": "B.S.",
+      "field": "Computer Science",
+      "year": "2018"
+    }}
+  ]
+}}
+
+Resume:
+{resume_text}
