@@ -43,3 +43,48 @@ CREATE TABLE IF NOT EXISTS feedback (
     FOREIGN KEY (session_id)   REFERENCES sessions(id),
     FOREIGN KEY (candidate_id) REFERENCES candidates(id)
 );
+
+-- ============================================================
+-- Recruitment / Resume Screening
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS jobs (
+    id              TEXT PRIMARY KEY,
+    role            TEXT NOT NULL,
+    required_skills TEXT NOT NULL,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS screening_results (
+    id                TEXT PRIMARY KEY,
+    job_id            TEXT NOT NULL,
+    candidate_id      TEXT NOT NULL,
+
+    skill_score       REAL NOT NULL DEFAULT 0,
+    semantic_score    REAL NOT NULL DEFAULT 0,
+    experience_score  REAL NOT NULL DEFAULT 0,
+    project_score     REAL NOT NULL DEFAULT 0,
+    education_score   REAL NOT NULL DEFAULT 0,
+
+    final_score       REAL NOT NULL DEFAULT 0,
+    rank              INTEGER,
+
+    matched_skills    TEXT NOT NULL DEFAULT '[]',
+    missing_skills    TEXT NOT NULL DEFAULT '[]',
+
+    status            TEXT NOT NULL DEFAULT 'SCREENED',
+
+    created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+
+    FOREIGN KEY (job_id) REFERENCES jobs(id),
+    FOREIGN KEY (candidate_id) REFERENCES candidates(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_screening_job
+    ON screening_results(job_id);
+
+CREATE INDEX IF NOT EXISTS idx_screening_candidate
+    ON screening_results(candidate_id);
+
+CREATE INDEX IF NOT EXISTS idx_screening_score
+    ON screening_results(final_score DESC);

@@ -1,121 +1,355 @@
 """
 pages/1_Resume_Analysis.py
-Resume upload, parsing, and job-match analysis.
+
+Recruiter Resume Screening:
+Upload up to 10 resumes, save them permanently,
+analyse each resume, and store candidates.
 """
+
 import streamlit as st
-import tempfile
-import os
 from pathlib import Path
 
-st.set_page_config(page_title="Resume Analysis", page_icon="📄", layout="wide")
-st.title("📄 Resume Analysis")
+from config.settings import settings
 
-# ── Lazy imports (avoid heavy imports on other pages) ─────────────────────────
+
+st.set_page_config(
+    page_title="Resume Screening",
+    page_icon="📄",
+    layout="wide"
+)
+
+st.title("📄 Resume Screening")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Lazy load orchestrator
+# ─────────────────────────────────────────────────────────────────────────────
+
 @st.cache_resource
 def get_agent():
     from agents.orchestrator_agent import orchestrator
     return orchestrator
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Save uploaded resume
+# ─────────────────────────────────────────────────────────────────────────────
+
+def save_uploaded_resume(uploaded_file):
+    """
+    Permanently save uploaded resume inside data/resumes/.
+    """
+
+    settings.RESUME_DIR.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    original_name = Path(uploaded_file.name).name
+
+    file_path = settings.RESUME_DIR / original_name
+
+    # Prevent overwriting an existing resume
+    if file_path.exists():
+
+        stem = file_path.stem
+        suffix = file_path.suffix
+
+        counter = 1
+
+        while file_path.exists():
+
+            file_path = (
+                settings.RESUME_DIR
+                / f"{stem}_{counter}{suffix}"
+            )
+
+            counter += 1
+
+    with open(file_path, "wb") as f:
+        f.write(uploaded_file.getbuffer())
+
+    return file_path
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Main page
+# ─────────────────────────────────────────────────────────────────────────────
+
 def run():
+
     orchestrator = get_agent()
 
-    st.markdown("Upload your resume and (optionally) a job description to get a personalised match score.")
+    st.markdown(
+        """
+        Upload candidate resumes for screening against a job description.
 
-    col1, col2 = st.columns([1, 1])
+        **Maximum resumes per batch: 10**
+        """
+    )
 
-    with col1:
-        st.subheader("Upload Resume")
-        uploaded = st.file_uploader(
-            "Supported formats: PDF, DOCX, TXT",
-            type=["pdf", "docx", "doc", "txt"],
+    # ─────────────────────────────────────────────────────────────────────────
+    # Job information
+    # ─────────────────────────────────────────────────────────────────────────
+
+    st.subheader("💼 Job Information")
+
+    target_role = st.text_input(
+        "Target Role",
+        placeholder="Example: Junior AI Engineer"
+    )
+
+    job_desc = st.text_area(
+        "Job Description",
+        height=220,
+        placeholder="Paste the complete job description here..."
+    )
+
+    st.divider()
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Multiple resume upload
+    # ─────────────────────────────────────────────────────────────────────────
+
+    st.subheader("📄 Upload Candidate Resumes")
+
+    uploaded_files = st.file_uploader(
+        "Select up to 10 resumes",
+        type=["pdf", "docx", "doc", "txt"],
+        accept_multiple_files=True
+    )
+
+    if uploaded_files:
+
+        if len(uploaded_files) > 10:
+
+            st.error(
+                "❌ You can upload a maximum of 10 resumes."
+            )
+
+            return
+
+        st.success(
+            f"✅ {len(uploaded_files)} resume(s) selected."
         )
-        target_role = st.text_input("Target role", placeholder="e.g. Senior Backend Engineer")
 
-    with col2:
-        st.subheader("Job Description (optional)")
-        job_desc = st.text_area(
-            "Paste the job description to get a match score",
-            height=200,
-            placeholder="Paste job description here...",
-        )
+        # Show selected files
+        for index, uploaded_file in enumerate(
+            uploaded_files,
+            start=1
+        ):
 
-    if st.button("🔍 Analyse Resume", type="primary", disabled=uploaded is None):
-        with st.spinner("Parsing resume and extracting insights…"):
-            # Save upload to temp file
-            suffix = Path(uploaded.name).suffix
-            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-                tmp.write(uploaded.read())
-                tmp_path = tmp.name
+            st.write(
+                f"**{index}.** {uploaded_file.name}"
+            )
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Analyse button
+    # ─────────────────────────────────────────────────────────────────────────
+
+    can_analyse = (
+        uploaded_files
+        and len(uploaded_files) > 0
+        and target_role.strip()
+        and job_desc.strip()
+    )
+
+    if st.button(
+        "🚀 Analyse All Resumes",
+        type="primary",
+        disabled=not can_analyse
+    ):
+
+        st.divider()
+
+        st.subheader("🔄 Resume Processing")
+
+        progress = st.progress(0)
+
+        results = []
+
+        total = len(uploaded_files)
+
+        for index, uploaded_file in enumerate(
+            uploaded_files,
+            start=1
+        ):
+
+            st.write(
+                f"### Candidate {index}/{total}"
+            )
 
             try:
-                candidate = orchestrator.analyse_resume(
-                    tmp_path,
-                    target_role=target_role,
-                    job_description=job_desc,
-                )
-                st.session_state.candidate = candidate
-            finally:
-                os.unlink(tmp_path)
 
-    # ── Display results ───────────────────────────────────────────────────────
-    candidate = st.session_state.get("candidate")
-    if not candidate:
+                # ─────────────────────────────────────────────────────────────
+                # STEP 1 — Save resume
+                # ─────────────────────────────────────────────────────────────
+
+                resume_path = save_uploaded_resume(
+                    uploaded_file
+                )
+
+                st.write(
+                    f"📁 Saved: `{resume_path.name}`"
+                )
+
+                # ─────────────────────────────────────────────────────────────
+                # STEP 2 — Analyse resume
+                # ─────────────────────────────────────────────────────────────
+
+                with st.spinner(
+                    f"Analysing {uploaded_file.name}..."
+                ):
+
+                    candidate = orchestrator.analyse_resume(
+                        str(resume_path),
+                        target_role=target_role,
+                        job_description=job_desc
+                    )
+
+                # Store actual file path
+                candidate.resume_file_path = str(
+                    resume_path
+                )
+
+                results.append(
+                    {
+                        "candidate": candidate,
+                        "file": uploaded_file.name,
+                        "status": "success"
+                    }
+                )
+
+                st.success(
+                    f"✅ {candidate.name or uploaded_file.name} analysed successfully."
+                )
+
+            except Exception as e:
+
+                results.append(
+                    {
+                        "candidate": None,
+                        "file": uploaded_file.name,
+                        "status": "failed",
+                        "error": str(e)
+                    }
+                )
+
+                st.error(
+                    f"❌ Failed: {uploaded_file.name}"
+                )
+
+                st.error(
+                    str(e)
+                )
+
+            progress.progress(
+                index / total
+            )
+
+        # Save results in Streamlit session
+        st.session_state.screening_candidates = results
+
+        st.success(
+            f"🎉 Finished processing {total} resume(s)."
+        )
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Results
+    # ─────────────────────────────────────────────────────────────────────────
+
+    results = st.session_state.get(
+        "screening_candidates",
+        []
+    )
+
+    if not results:
         return
 
     st.divider()
-    st.success(f"✅ Resume analysed for **{candidate.name}**")
+
+    st.header("👥 Processed Candidates")
+
+    successful = [
+        r for r in results
+        if r["status"] == "success"
+    ]
+
+    failed = [
+        r for r in results
+        if r["status"] == "failed"
+    ]
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("Years of Experience", f"{candidate.years_of_experience:.1f}")
-    col2.metric("Skills Identified", len(candidate.skills))
-    col3.metric("Work Experience", len(candidate.experience))
 
-    with st.expander("📝 Professional Summary", expanded=True):
-        st.write(candidate.summary)
+    col1.metric(
+        "Resumes Uploaded",
+        len(results)
+    )
 
-    col_a, col_b = st.columns(2)
+    col2.metric(
+        "Successfully Analysed",
+        len(successful)
+    )
 
-    with col_a:
-        with st.expander("🛠️ Skills", expanded=True):
-            cols = st.columns(3)
-            for i, skill in enumerate(candidate.skills):
-                cols[i % 3].markdown(f"• {skill}")
+    col3.metric(
+        "Failed",
+        len(failed)
+    )
 
-    with col_b:
-        with st.expander("💼 Work Experience", expanded=True):
-            for exp in candidate.experience:
-                st.markdown(f"**{exp.title}** at {exp.company} _{exp.duration}_")
-                for r in exp.responsibilities[:3]:
-                    st.markdown(f"  - {r}")
+    # ─────────────────────────────────────────────────────────────────────────
+    # Candidate cards
+    # ─────────────────────────────────────────────────────────────────────────
 
-    # ── Job match ─────────────────────────────────────────────────────────────
-    if job_desc and st.button("📊 Run Job Match Analysis"):
-        with st.spinner("Comparing profile to job description…"):
-            match = orchestrator.match_candidate_to_job(candidate, job_desc)
+    for index, result in enumerate(
+        successful,
+        start=1
+    ):
 
-        score = match.get("match_score", 0)
-        color = "#22c55e" if score >= 75 else "#eab308" if score >= 50 else "#ef4444"
-        st.markdown(
-            f"<h2 style='color:{color}'>Match Score: {score}/100</h2>",
-            unsafe_allow_html=True,
-        )
-        st.markdown(match.get("summary", ""))
+        candidate = result["candidate"]
 
-        c1, c2 = st.columns(2)
-        with c1:
-            st.markdown("**✅ Strengths**")
-            for s in match.get("strengths", []):
-                st.markdown(f"- {s}")
-        with c2:
-            st.markdown("**⚠️ Gaps**")
-            for g in match.get("gaps", []):
-                st.markdown(f"- {g}")
+        with st.expander(
+            f"👤 Candidate {index}: {candidate.name or 'Unknown'}",
+            expanded=False
+        ):
 
-    if candidate:
-        st.divider()
-        if st.button("▶️ Start Mock Interview with this profile →", type="primary"):
-            st.switch_page("pages/2_Mock_Interview.py")
+            col1, col2, col3 = st.columns(3)
+
+            col1.metric(
+                "Experience",
+                f"{candidate.years_of_experience:.1f} years"
+            )
+
+            col2.metric(
+                "Skills",
+                len(candidate.skills)
+            )
+
+            col3.metric(
+                "Work Experience",
+                len(candidate.experience)
+            )
+
+            st.write(
+                "**Resume:**",
+                result["file"]
+            )
+
+            st.write(
+                "**Summary:**"
+            )
+
+            st.write(
+                candidate.summary
+            )
+
+            st.write(
+                "**Skills:**"
+            )
+
+            st.write(
+                ", ".join(candidate.skills)
+            )
 
 
 run()
